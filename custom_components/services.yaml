@@ -1,0 +1,15 @@
+sync_now:
+  name: Jetzt synchronisieren
+  description: Synchronisiert alle konfigurierten Dateien sofort nach Gitea.
+  fields: {}
+
+sync_file:
+  name: Einzelne Datei synchronisieren
+  description: Synchronisiert eine einzelne Datei aus /config nach Gitea.
+  fields:
+    file_path:
+      name: Dateipfad
+      description: Relativer Pfad ab /config, z.B. "automations.yaml" oder "scripts/my_script.yaml"
+      required: true
+      selector:
+        text:

@@ -1,0 +1,59 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Gitea Config Sync einrichten",
+        "description": "Verbinde Home Assistant mit deinem Gitea-Repository.",
+        "data": {
+          "url": "Gitea URL (z.B. https://gitea.example.com)",
+          "token": "Gitea Access Token",
+          "owner": "Repository-Besitzer (User oder Organisation)",
+          "repo": "Repository-Name",
+          "branch": "Branch (Standard: main)"
+        }
+      },
+      "paths": {
+        "title": "Zu synchronisierende Pfade",
+        "description": "Lege fest welche Dateien und Ordner synchronisiert werden sollen.",
+        "data": {
+          "include_paths": "Eingeschlossene Pfade (kommagetrennt, z.B. *.yaml,automations/)",
+          "exclude_paths": "Ausgeschlossene Pfade (kommagetrennt, z.B. secrets.yaml,.storage/)",
+          "commit_message_prefix": "Commit-Nachricht Präfix"
+        }
+      },
+      "schedule": {
+        "title": "Synchronisations-Zeitplan",
+        "description": "Wann soll automatisch synchronisiert werden?",
+        "data": {
+          "auto_sync_interval": "Intervall für automatische Synchronisation (Minuten, 0 = deaktiviert)",
+          "sync_on_start": "Beim HA-Start synchronisieren",
+          "watch_files": "Dateien überwachen und bei Änderung synchronisieren"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zu Gitea fehlgeschlagen. URL und Token prüfen.",
+      "invalid_token": "Ungültiges Access Token.",
+      "repo_not_found": "Repository nicht gefunden. Besitzer und Name prüfen.",
+      "unknown": "Unbekannter Fehler."
+    },
+    "abort": {
+      "already_configured": "Gitea Sync ist bereits konfiguriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Gitea Sync Einstellungen",
+        "data": {
+          "include_paths": "Eingeschlossene Pfade",
+          "exclude_paths": "Ausgeschlossene Pfade",
+          "auto_sync_interval": "Automatisches Intervall (Minuten)",
+          "sync_on_start": "Beim Start synchronisieren",
+          "watch_files": "Dateiänderungen überwachen",
+          "commit_message_prefix": "Commit-Nachricht Präfix"
+        }
+      }
+    }
+  }
+}
