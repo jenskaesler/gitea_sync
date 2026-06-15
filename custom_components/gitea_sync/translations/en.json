@@ -5,7 +5,7 @@
         "title": "Gitea Config Sync einrichten",
         "description": "Verbinde Home Assistant mit deinem Gitea-Repository.",
         "data": {
-          "url": "Gitea URL (z.B. https://gitea.example.com)",
+          "url": "Gitea URL",
           "token": "Gitea Access Token",
           "owner": "Repository-Besitzer (User oder Organisation)",
           "repo": "Repository-Name",
