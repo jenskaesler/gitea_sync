@@ -1,14 +1,14 @@
 {
   "domain": "gitea_sync",
   "name": "Gitea Config Sync",
-  "version": "1.0.0",
-  "documentation": "https://github.com/jenskaesler/gitea_sync",
-  "issue_tracker": "https://github.com/jenskaesler/gitea_sync/issues",
-  "dependencies": [],
   "after_dependencies": [],
   "codeowners": ["@jenskaesler"],
-  "requirements": ["aiohttp>=3.9.0"],
-  "iot_class": "local_push",
   "config_flow": true,
-  "integration_type": "service"
+  "dependencies": [],
+  "documentation": "https://github.com/jenskaesler/gitea_sync",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/jenskaesler/gitea_sync/issues",
+  "requirements": ["aiohttp>=3.9.0"],
+  "version": "1.0.0"
 }
