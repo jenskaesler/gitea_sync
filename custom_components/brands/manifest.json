@@ -1,0 +1,5 @@
+{
+  "domain": "gitea_sync",
+  "name": "Gitea Config Sync",
+  "integrations": ["gitea_sync"]
+}
