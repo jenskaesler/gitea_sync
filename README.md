@@ -2,7 +2,7 @@
 
 [![HACS Badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/release/jenskaesler/gitea_sync.svg)](https://github.com/jenskaesler/gitea_sync/releases)
-[![License](https://img.shields.io/github/license/jenskaesler/gitea_sync.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/jenskaesler/gitea_sync/blob/main/LICENSE)
 [![Hassfest](https://github.com/jenskaesler/gitea_sync/actions/workflows/hassfest.yml/badge.svg)](https://github.com/jenskaesler/gitea_sync/actions/workflows/hassfest.yml)
 [![HACS Validation](https://github.com/jenskaesler/gitea_sync/actions/workflows/hacs.yml/badge.svg)](https://github.com/jenskaesler/gitea_sync/actions/workflows/hacs.yml)
 
