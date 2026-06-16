@@ -1,6 +1,6 @@
 # Gitea Config Sync
 
-[![HACS Badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
+[![HACS Badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![GitHub Release](https://img.shields.io/github/release/jenskaesler/gitea_sync.svg)](https://github.com/jenskaesler/gitea_sync/releases)
 [![License](https://img.shields.io/github/license/jenskaesler/gitea_sync.svg)](LICENSE)
 [![Hassfest](https://github.com/jenskaesler/gitea_sync/actions/workflows/hassfest.yml/badge.svg)](https://github.com/jenskaesler/gitea_sync/actions/workflows/hassfest.yml)

@@ -3,7 +3,15 @@
 Alle wichtigen Änderungen an diesem Projekt werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
-## [1.0.0] – 2024-06-15
+## [1.1.0] – 2026-06-15
+
+### Geändert
+- Brand-Icon nach `custom_components/gitea_sync/brand/icon.png` verschoben (HACS-Anforderung)
+- `strings.json` und Übersetzungen bereinigt (URL-Felder ohne Beispiel-URLs)
+- `manifest.json` Key-Reihenfolge korrigiert (Hassfest-Anforderung: domain, name, dann alphabetisch)
+- Englische Übersetzung (`translations/en.json`) vollständig auf Englisch übersetzt
+
+## [1.0.0] – 2026-06-15
 
 ### Hinzugefügt
 - Initiale Version der Gitea Config Sync Integration
