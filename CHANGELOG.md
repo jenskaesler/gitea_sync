@@ -3,6 +3,16 @@
 Alle wichtigen Änderungen an diesem Projekt werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
+## [1.2.0] – 2026-06-16
+
+### Behoben
+- `manifest.json` — Version von `1.0.0` auf `1.1.0` korrigiert (war nicht synchron mit Release-Tag)
+- `translations/en.json` — Englische Übersetzung war identisch mit der deutschen; nun vollständig auf Englisch übersetzt
+- `CHANGELOG.md` — Fehlenden Eintrag für `v1.1.0` ergänzt; Jahreszahl von 2024 auf 2026 korrigiert
+- `LICENSE` — Jahreszahl im Copyright von 2024 auf 2026 korrigiert
+- `README.md` — HACS-Badge von „Default" auf „Custom" korrigiert (Integration noch nicht im offiziellen HACS Default-Store gelistet)
+- `PUBLISHING.md` — Veralteten Inhalt bereinigt und als Contributor- & Release-Anleitung neu geschrieben
+
 ## [1.1.0] – 2026-06-15
 
 ### Geändert
