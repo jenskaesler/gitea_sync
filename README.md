@@ -6,119 +6,121 @@
 [![Hassfest](https://github.com/jenskaesler/gitea_sync/actions/workflows/hassfest.yml/badge.svg)](https://github.com/jenskaesler/gitea_sync/actions/workflows/hassfest.yml)
 [![HACS Validation](https://github.com/jenskaesler/gitea_sync/actions/workflows/hacs.yml/badge.svg)](https://github.com/jenskaesler/gitea_sync/actions/workflows/hacs.yml)
 
-Home Assistant Custom Integration, die deine `/config`-Dateien automatisch mit einem Gitea-Repository synchronisiert — manuell, zeitgesteuert oder bei Dateiänderungen.
+> **Automatische Versionskontrolle für deine Home Assistant Konfiguration.**
+> Gitea Config Sync pusht deine `/config`-Dateien zuverlässig in ein Gitea-Repository —
+> bei jeder Änderung, nach Zeitplan oder auf Knopfdruck.
 
 ---
 
-## Features
+## ✨ Features
 
-- 🔄 **Automatischer Sync** bei Dateiänderungen (File-Watcher mit Debounce)
-- ⏱️ **Zeitgesteuerter Sync** in konfigurierbarem Intervall
-- 🚀 **Sync beim HA-Start**
-- 🖱️ **Manueller Sync** per Button-Entity oder Service
-- 🎯 **Einzeldatei-Sync** per Service-Aufruf
-- 🔒 **Secrets werden standardmäßig ausgeschlossen**
-- ⚡ **Nur geänderte Dateien werden gepusht** (Inhaltsvergleich)
-- 📊 **Sensor-Entity** mit Status, Commit-SHA und Zeitstempel
-- 🔧 **Frei konfigurierbare Pfade** via Glob-Muster
+- 🔄 **File-Watcher** — erkennt Änderungen sofort und synchronisiert automatisch (5s Debounce)
+- ⏱️ **Zeitgesteuerter Sync** — konfigurierbares Intervall von 1 bis 1440 Minuten
+- 🚀 **Startup-Sync** — synchronisiert automatisch bei jedem HA-Neustart
+- 🖱️ **Manueller Sync** — per Button-Entity direkt im Dashboard oder per Service
+- 🎯 **Einzeldatei-Sync** — gezieltes Pushen einzelner Dateien per Service-Aufruf
+- 🔒 **Secrets-Schutz** — `secrets.yaml` und `.storage/` sind standardmäßig ausgeschlossen
+- ⚡ **Intelligenter Vergleich** — nur tatsächlich geänderte Dateien werden gepusht
+- 📊 **Status-Sensor** — zeigt `idle`, `running`, `success` oder `failed` mit Commit-SHA
+- 🔧 **Flexible Pfadkonfiguration** — Include/Exclude per Glob-Muster frei konfigurierbar
+- ⚙️ **Options-Flow** — alle Einstellungen nachträglich änderbar, kein Neustart nötig
 
 ---
 
-## Installation
+## 📦 Installation
 
-### Via HACS (empfohlen)
+### Via HACS — empfohlen
 
-[![Zu HACS hinzufügen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jenskaesler&repository=gitea_sync&category=integration)
+[![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=jenskaesler&repository=gitea_sync&category=integration)
 
-1. HACS öffnen → **Integrationen** → Suche nach **Gitea Config Sync**
-2. **Herunterladen** klicken
+1. Den Button oben klicken oder in HACS manuell als Custom Repository hinzufügen:
+   `https://github.com/jenskaesler/gitea_sync` → Kategorie: **Integration**
+2. **Gitea Config Sync** suchen und **Herunterladen** klicken
 3. Home Assistant neu starten
+4. **Einstellungen → Geräte & Dienste → Integration hinzufügen → Gitea Config Sync**
 
 ### Manuell
 
-1. Dieses Repository herunterladen
-2. Den Ordner `custom_components/gitea_sync/` nach `/config/custom_components/gitea_sync/` kopieren
-3. Home Assistant neu starten
+1. Das [neueste Release](https://github.com/jenskaesler/gitea_sync/releases/latest) herunterladen
+2. `gitea_sync.zip` entpacken
+3. Den Ordner `custom_components/gitea_sync/` nach `/config/custom_components/gitea_sync/` kopieren
+4. Home Assistant neu starten
 
-### Optionale Abhängigkeit (File-Watcher)
+### Optionale Abhängigkeit: File-Watcher
 
-Für die automatische Erkennung von Dateiänderungen wird `watchdog` benötigt:
+Für die automatische Erkennung von Dateiänderungen wird `watchdog` benötigt.
+Ohne `watchdog` sind alle anderen Sync-Methoden weiterhin voll funktionsfähig.
 
 ```bash
 # In der HA-Shell (Advanced SSH Addon):
 pip install watchdog
 ```
 
-Ohne `watchdog` funktionieren alle anderen Sync-Methoden weiterhin.
-
 ---
 
-## Einrichtung
+## 🔧 Einrichtung
+
+Die Einrichtung erfolgt in drei Schritten über den integrierten Config-Flow.
+
+### Schritt 1 — Verbindung
 
 **Einstellungen → Geräte & Dienste → Integration hinzufügen → Gitea Config Sync**
 
-### Schritt 1: Verbindung
+- **Gitea URL** — URL deiner Gitea-Instanz, z.B. `https://gitea.example.com`
+- **Access Token** — Gitea Personal Access Token (Scope: `repository`)
+- **Repository-Besitzer** — dein Gitea-Username oder eine Organisation
+- **Repository-Name** — Name des Ziel-Repositories, z.B. `ha-config`
+- **Branch** — Ziel-Branch, Standard: `main`
 
-| Feld | Beschreibung | Beispiel |
-|------|-------------|---------|
-| Gitea URL | URL deiner Gitea-Instanz | `https://gitea.example.com` |
-| Access Token | Gitea Personal Access Token | `abc123...` |
-| Repository-Besitzer | GitHub/Gitea Username oder Organisation | `jens` |
-| Repository-Name | Name des Ziel-Repositories | `ha-config` |
-| Branch | Ziel-Branch | `main` |
+> **Token erstellen:** Gitea → Einstellungen → Anwendungen → Token generieren → Scope `repository` aktivieren
 
-> **Token erstellen:** Gitea → Einstellungen → Anwendungen → Token generieren
-> Benötigter Scope: `repository` (Lesen & Schreiben)
+### Schritt 2 — Pfade
 
-### Schritt 2: Pfade
+- **Einschließen** — Glob-Muster für zu synchronisierende Dateien, kommagetrennt
+  Standard: `*.yaml,*.json`
+- **Ausschließen** — Glob-Muster für ausgeschlossene Dateien, kommagetrennt
+  Standard: `secrets.yaml,.storage/,*.log,home-assistant_v2.db`
+- **Commit-Präfix** — Präfix für automatische Commit-Nachrichten
+  Standard: `HA Auto-Sync`
 
-| Feld | Standard | Beschreibung |
-|------|---------|-------------|
-| Einschließen | `*.yaml,*.json` | Glob-Muster, kommagetrennt |
-| Ausschließen | `secrets.yaml,.storage/,*.log,home-assistant_v2.db` | Glob-Muster, kommagetrennt |
-| Commit-Präfix | `HA Auto-Sync` | Prefix für Commit-Nachrichten |
+### Schritt 3 — Zeitplan
 
-### Schritt 3: Zeitplan
-
-| Feld | Standard | Beschreibung |
-|------|---------|-------------|
-| Intervall (Minuten) | `0` | `0` = deaktiviert, sonst 1–1440 |
-| Beim Start synchronisieren | `true` | Sync bei jedem HA-Neustart |
-| Dateiänderungen überwachen | `true` | File-Watcher (benötigt `watchdog`) |
+- **Intervall** — Automatischer Sync alle X Minuten (`0` = deaktiviert, max. 1440)
+- **Beim Start synchronisieren** — Sync bei jedem HA-Neustart (Standard: `true`)
+- **Dateiänderungen überwachen** — File-Watcher aktivieren (benötigt `watchdog`)
 
 ---
 
-## Entitäten
+## 📡 Entitäten
 
-| Entität | Typ | Beschreibung |
-|---------|-----|-------------|
-| `sensor.gitea_sync_status` | Sensor | Aktueller Status |
-| `button.gitea_sync_jetzt_synchronisieren` | Button | Manueller Sync-Trigger |
+Nach der Einrichtung stehen zwei Entitäten zur Verfügung:
 
-### Sensor-Zustände
+### `sensor.gitea_sync_status`
 
-| Zustand | Bedeutung |
-|---------|----------|
-| `idle` | Wartet auf nächsten Trigger |
-| `running` | Synchronisation läuft |
-| `success` | Letzter Sync erfolgreich |
-| `failed` | Letzter Sync fehlgeschlagen |
+Zeigt den aktuellen Synchronisationsstatus:
 
-### Sensor-Attribute
+- `idle` — wartet auf den nächsten Trigger
+- `running` — Synchronisation läuft gerade
+- `success` — letzter Sync erfolgreich abgeschlossen
+- `failed` — letzter Sync fehlgeschlagen
 
-| Attribut | Beschreibung |
-|----------|-------------|
-| `last_sync` | ISO-Zeitstempel der letzten Synchronisation |
-| `last_commit` | SHA des letzten Commits (7 Zeichen) |
-| `files_synced` | Anzahl tatsächlich geänderter Dateien |
+**Attribute des Sensors:**
+
+- `last_sync` — Zeitstempel der letzten Synchronisation (ISO 8601)
+- `last_commit` — SHA des letzten Commits (7 Zeichen)
+- `files_synced` — Anzahl der tatsächlich geänderten Dateien
+
+### `button.gitea_sync_jetzt_synchronisieren`
+
+Löst sofort eine vollständige Synchronisation aus — ideal für das Dashboard.
 
 ---
 
-## Dienste
+## ⚙️ Dienste
 
 ### `gitea_sync.sync_now`
 
-Startet sofort eine vollständige Synchronisation aller konfigurierten Dateien.
+Startet eine vollständige Synchronisation aller konfigurierten Dateien.
 
 ```yaml
 service: gitea_sync.sync_now
@@ -136,7 +138,7 @@ data:
 
 ---
 
-## Beispiel-Automationen
+## 🤖 Beispiel-Automationen
 
 ### Tägliche Sicherung um 02:00 Uhr
 
@@ -164,10 +166,10 @@ action:
       message: "Die HA-Config konnte nicht nach Gitea synchronisiert werden."
 ```
 
-### Einzelne Datei nach Änderung synchronisieren
+### Automationen-Datei sofort nach Reload synchronisieren
 
 ```yaml
-alias: automations.yaml sofort nach Gitea
+alias: automations.yaml sofort nach Gitea pushen
 trigger:
   - platform: event
     event_type: automation_reloaded
@@ -179,42 +181,59 @@ action:
 
 ---
 
-## Fehlerbehebung
+## 🛠️ Fehlerbehebung
 
 ### Debug-Logging aktivieren
 
-In `configuration.yaml`:
-
 ```yaml
+# configuration.yaml
 logger:
   default: warning
   logs:
     custom_components.gitea_sync: debug
 ```
 
-### Häufige Probleme
+Logs sind danach unter **Einstellungen → System → Protokolle** sichtbar.
 
-**„Verbindung zu Gitea fehlgeschlagen"**
-- Gitea-URL prüfen (mit `https://`, ohne abschließenden `/`)
-- Token-Berechtigungen prüfen (Scope `repository` erforderlich)
-- Netzwerkverbindung von HA zu Gitea prüfen
+### „Verbindung zu Gitea fehlgeschlagen"
 
-**„Repository nicht gefunden"**
+- Gitea-URL prüfen — muss mit `https://` beginnen, kein abschließendes `/`
+- Token-Berechtigungen prüfen — Scope `repository` (Lesen & Schreiben) erforderlich
+- Netzwerkverbindung von HA zur Gitea-Instanz prüfen
+
+### „Repository nicht gefunden"
+
 - Besitzer und Repository-Name exakt prüfen (Groß-/Kleinschreibung beachten)
-- Repository muss auf Gitea existieren und öffentlich oder für den Token zugänglich sein
+- Repository muss existieren und für den Token zugänglich sein
 
-**File-Watcher funktioniert nicht**
-- `pip install watchdog` in der HA-Shell ausführen
-- HA danach neu starten
+### File-Watcher funktioniert nicht
+
+```bash
+pip install watchdog
+# Danach HA neu starten
+```
+
+### Secrets werden versehentlich synchronisiert
+
+Prüfen ob `secrets.yaml` im Exclude-Feld eingetragen ist.
+Standard-Exclude: `secrets.yaml,.storage/,*.log,home-assistant_v2.db`
 
 ---
 
-## Changelog
+## 📋 Changelog
 
-Siehe [CHANGELOG.md](CHANGELOG.md)
+Alle Änderungen sind in der [CHANGELOG.md](https://github.com/jenskaesler/gitea_sync/blob/main/CHANGELOG.md) dokumentiert.
 
 ---
 
-## Lizenz
+## 🤝 Mitwirken
 
-MIT License – siehe [LICENSE](LICENSE)
+Pull Requests und Issues sind willkommen!
+Bitte lies die [PUBLISHING.md](https://github.com/jenskaesler/gitea_sync/blob/main/PUBLISHING.md) für Hinweise zur lokalen Entwicklung und zum Release-Prozess.
+
+---
+
+## 📄 Lizenz
+
+MIT License — © 2026 [jenskaesler](https://github.com/jenskaesler)
+Siehe [LICENSE](https://github.com/jenskaesler/gitea_sync/blob/main/LICENSE) für Details.
