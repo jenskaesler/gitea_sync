@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -119,31 +118,57 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 def _setup_file_watcher(
     hass: HomeAssistant, coordinator: GiteaSyncCoordinator, entry_id: str
 ) -> None:
-    """Watch /config for changes using inotify-compatible polling."""
+    """Watch /config for changes using watchdog.
+    
+    IMPORTANT: The watchdog event handler runs in a separate thread.
+    We must NEVER call hass.async_create_task() directly from that thread
+    as it would raise:
+        RuntimeError: calls hass.async_create_task from a thread 
+        other than the event loop
+    
+    Instead we use asyncio.run_coroutine_threadsafe() to safely schedule
+    coroutines from the watchdog thread onto the HA event loop.
+    """
     try:
         from watchdog.observers import Observer
         from watchdog.events import FileSystemEventHandler
 
+        loop = hass.loop  # capture event loop reference in the main thread
+
         class _Handler(FileSystemEventHandler):
             def __init__(self) -> None:
-                self._pending: asyncio.Task | None = None
+                self._pending_handle = None
 
-            def _schedule(self) -> None:
-                async def _debounced():
+            def _schedule_sync(self) -> None:
+                """Schedule a debounced sync from the watchdog thread.
+                
+                Uses asyncio.run_coroutine_threadsafe() to safely cross
+                the thread boundary into the HA event loop.
+                """
+                # Cancel any pending debounce timer (thread-safe via loop)
+                if self._pending_handle is not None:
+                    loop.call_soon_threadsafe(self._pending_handle.cancel)
+
+                async def _debounced() -> None:
                     await asyncio.sleep(5)
                     await coordinator.sync_now(triggered_by="file_change")
 
-                if self._pending and not self._pending.done():
-                    self._pending.cancel()
-                self._pending = hass.async_create_task(_debounced())
+                # Schedule coroutine safely from watchdog thread onto HA event loop
+                future = asyncio.run_coroutine_threadsafe(_debounced(), loop)
+                # Store the Future's cancel handle so we can cancel the debounce
+                self._pending_handle = future
 
-            def on_modified(self, event):
+            def on_modified(self, event) -> None:
                 if not event.is_directory:
-                    self._schedule()
+                    self._schedule_sync()
 
-            def on_created(self, event):
+            def on_created(self, event) -> None:
                 if not event.is_directory:
-                    self._schedule()
+                    self._schedule_sync()
+
+            def on_deleted(self, event) -> None:
+                if not event.is_directory:
+                    self._schedule_sync()
 
         observer = Observer()
         observer.schedule(_Handler(), CONFIG_DIR, recursive=True)
@@ -154,7 +179,7 @@ def _setup_file_watcher(
     except ImportError:
         _LOGGER.warning(
             "watchdog library not available — file watching disabled. "
-            "Install via pip: pip install watchdog"
+            "Install via: pip install watchdog"
         )
 
 
@@ -165,7 +190,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if cancel_fn:
         cancel_fn()
 
-    # Stop file watcher
+    # Stop file watcher gracefully
     observer = hass.data[DOMAIN].pop(f"{entry.entry_id}_observer", None)
     if observer:
         observer.stop()
@@ -179,5 +204,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
+    """Handle options update — reload the entry."""
     await hass.config_entries.async_reload(entry.entry_id)
