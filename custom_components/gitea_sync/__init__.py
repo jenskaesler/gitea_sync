@@ -4,7 +4,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import timedelta
-from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -109,54 +108,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # ── File watcher ──────────────────────────────────────────────────────
     if data.get(CONF_WATCH_FILES, DEFAULT_WATCH_FILES):
-        _setup_file_watcher(hass, coordinator, entry.entry_id)
+        await _setup_file_watcher(hass, coordinator, entry.entry_id)
 
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     return True
 
 
-def _setup_file_watcher(
+async def _setup_file_watcher(
     hass: HomeAssistant, coordinator: GiteaSyncCoordinator, entry_id: str
 ) -> None:
     """Watch /config for changes using watchdog.
-    
-    IMPORTANT: The watchdog event handler runs in a separate thread.
-    We must NEVER call hass.async_create_task() directly from that thread
-    as it would raise:
-        RuntimeError: calls hass.async_create_task from a thread 
-        other than the event loop
-    
-    Instead we use asyncio.run_coroutine_threadsafe() to safely schedule
-    coroutines from the watchdog thread onto the HA event loop.
+
+    Threading rules:
+    - observer.start() is blocking → must run in executor, never in event loop
+    - watchdog callbacks run in watchdog thread → must use
+      asyncio.run_coroutine_threadsafe() to schedule coroutines on HA event loop
+    - observer.stop() / observer.join() are blocking → run in executor on unload
     """
     try:
         from watchdog.observers import Observer
         from watchdog.events import FileSystemEventHandler
 
-        loop = hass.loop  # capture event loop reference in the main thread
+        loop = hass.loop  # capture event loop in main thread before handing to Observer
 
         class _Handler(FileSystemEventHandler):
             def __init__(self) -> None:
-                self._pending_handle = None
+                self._pending_future: asyncio.Future | None = None
 
             def _schedule_sync(self) -> None:
-                """Schedule a debounced sync from the watchdog thread.
-                
-                Uses asyncio.run_coroutine_threadsafe() to safely cross
-                the thread boundary into the HA event loop.
-                """
-                # Cancel any pending debounce timer (thread-safe via loop)
-                if self._pending_handle is not None:
-                    loop.call_soon_threadsafe(self._pending_handle.cancel)
+                """Thread-safe debounced sync trigger from watchdog thread."""
+
+                # Cancel previous pending sync if still waiting
+                if self._pending_future is not None and not self._pending_future.done():
+                    loop.call_soon_threadsafe(self._pending_future.cancel)
 
                 async def _debounced() -> None:
                     await asyncio.sleep(5)
                     await coordinator.sync_now(triggered_by="file_change")
 
-                # Schedule coroutine safely from watchdog thread onto HA event loop
-                future = asyncio.run_coroutine_threadsafe(_debounced(), loop)
-                # Store the Future's cancel handle so we can cancel the debounce
-                self._pending_handle = future
+                # Safe cross-thread scheduling onto the HA event loop
+                self._pending_future = asyncio.run_coroutine_threadsafe(
+                    _debounced(), loop
+                )
 
             def on_modified(self, event) -> None:
                 if not event.is_directory:
@@ -172,7 +165,10 @@ def _setup_file_watcher(
 
         observer = Observer()
         observer.schedule(_Handler(), CONFIG_DIR, recursive=True)
-        observer.start()
+
+        # observer.start() is blocking — must run in executor, not in event loop
+        await hass.async_add_executor_job(observer.start)
+
         hass.data[DOMAIN][f"{entry_id}_observer"] = observer
         _LOGGER.info("File watcher started for %s", CONFIG_DIR)
 
@@ -185,16 +181,16 @@ def _setup_file_watcher(
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    # Stop interval
+    # Stop interval tracker
     cancel_fn = hass.data[DOMAIN].pop(f"{entry.entry_id}_cancel_interval", None)
     if cancel_fn:
         cancel_fn()
 
-    # Stop file watcher gracefully
+    # Stop file watcher — observer.stop() and observer.join() are blocking
     observer = hass.data[DOMAIN].pop(f"{entry.entry_id}_observer", None)
     if observer:
-        observer.stop()
-        observer.join()
+        await hass.async_add_executor_job(observer.stop)
+        await hass.async_add_executor_job(observer.join)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
