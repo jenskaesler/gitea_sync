@@ -3,6 +3,24 @@
 Alle wichtigen Änderungen an diesem Projekt werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
+## [1.4.0] – 2026-06-16
+
+### 🐛 Kritischer Bugfix
+
+- **`__init__.py`** — Blocking-Call-Fehler im File-Watcher vollständig behoben.
+  `observer.start()` sowie `observer.stop()` und `observer.join()` sind blockierende
+  Calls die nicht im async HA Event-Loop laufen dürfen. Alle drei werden nun korrekt
+  über `await hass.async_add_executor_job()` im Executor-Thread ausgeführt.
+  Zusätzlich bleibt `_setup_file_watcher` nun korrekt `async` damit der
+  `await`-Aufruf im Setup möglich ist.
+
+  Übersicht aller Thread-Regeln die nun korrekt eingehalten werden:
+
+  - `observer.start()` → `await hass.async_add_executor_job(observer.start)`
+  - `observer.stop()` → `await hass.async_add_executor_job(observer.stop)`
+  - `observer.join()` → `await hass.async_add_executor_job(observer.join)`
+  - Watchdog-Callbacks → `asyncio.run_coroutine_threadsafe(_debounced(), loop)`
+
 ## [1.3.0] – 2026-06-16
 
 ### 🐛 Kritischer Bugfix
