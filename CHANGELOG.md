@@ -3,6 +3,18 @@
 Alle wichtigen Änderungen an diesem Projekt werden hier dokumentiert.
 Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
+## [1.3.0] – 2026-06-16
+
+### 🐛 Kritischer Bugfix
+
+- **`__init__.py`** — Schwerwiegender Threading-Fehler im File-Watcher behoben der Home
+  Assistant zum Absturz bringen konnte (`RuntimeError: calls hass.async_create_task
+  from a thread other than the event loop`). Der watchdog-Handler lief in einem
+  separaten Thread und rief `hass.async_create_task()` direkt auf, was im HA
+  Event-Loop-Thread nicht erlaubt ist. Ersetzt durch `asyncio.run_coroutine_threadsafe()`
+  für thread-sicheres Scheduling. Zusätzlich werden nun auch `on_deleted`-Events
+  vom File-Watcher erkannt.
+
 ## [1.2.0] – 2026-06-16
 
 ### Behoben
